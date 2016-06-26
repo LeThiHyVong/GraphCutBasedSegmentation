@@ -28,10 +28,6 @@ public:
 
 	void setRegionBoundaryRelation(float);
 
-	void setRegionCoefficient(float);
-
-	void setBoundaryCoefficient(float);
-
 	void setDistanceType(cv::NormTypes);
 
 	void initComponent(const cv::Mat& origImg, const cv::Mat& seedMask);
@@ -63,12 +59,11 @@ private:
 
 	int    nCluster = 10;
 	int    dim = 3;
-	float  sigmaSqr = 200.0f;
-	float  lambda = 2.0f;
-	float  w_prob = 1.0f;
-	float  w_exp = 1.0f;
+	float  sigmaSqr = 40000.0f;
+	float  lambda = .5f;
+
 	cv::Mat   cluster_idx, center;
-	cv::NormTypes distType = cv::NORM_L1;
+	cv::NormTypes distType = cv::NORM_L2;
 	std::vector<float> bkgRelativeHistogram;
 	std::vector<float> objRelativeHistogram;
 
@@ -131,15 +126,7 @@ inline void GraphCutSegmentation::setRegionBoundaryRelation(float _lambda)
 {
 	lambda = _lambda;
 }
-inline void GraphCutSegmentation::setRegionCoefficient(float _wProb)
-{
-	w_prob = _wProb;
-}
 
-inline void GraphCutSegmentation::setBoundaryCoefficient(float _wExp)
-{
-	w_exp = _wExp;
-}
 
 inline void GraphCutSegmentation::setDistanceType(cv::NormTypes normType)
 {

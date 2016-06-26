@@ -5,8 +5,6 @@
 #include "graphcut\GraphCutSegmentation.h"
 #include "lazy\LazySnapping.h"
 
-#define FLAG		int
-
 #define LBUTTON_OFF	0
 #define LBUTTON_ON 	1
 
@@ -18,16 +16,12 @@
 #define DST "result\\"
 #define SRC "dataset\\"
 
-cv::Mat original_img;
-cv::Mat type;
-cv::Mat hint_img;
+std::ofstream ofs("result\\time.csv");
 
+cv::Mat original_img, type, hint_img;
 std::vector<std::string> inputList;
 std::vector<cv::Point> hintObj, hintBkg;
-
-FLAG    lbutton_flag;
-FLAG    hint_flag;
-
+int    lbutton_flag, hint_flag;
 
 void params_init() {
 	lbutton_flag = LBUTTON_OFF;
@@ -69,22 +63,25 @@ void mouseHandler(int event, int x, int y, int flags, void *param) {
 				return;
 
 			cv::Scalar seedColor;
+			int circleSize = int(std::min(hint_img.cols, hint_img.rows) * SIZE_RATIO);
 			switch (hint_flag) {
 
 			case HINT_BACKGROUND:
 
-				hintBkg.push_back(curPoint);
-				seedColor = { 255, 0, 0 };
+				//hintBkg.push_back(curPoint);
+				cv::circle(type, curPoint, circleSize, { GraphCutSegmentation::BACKGROUND }, -1);
+				cv::circle(hint_img, curPoint, circleSize, { 255, 0, 0 }, -1);
 				break;
 
 			case HINT_FOREGROUND:
 
-				hintObj.push_back(curPoint);
-				seedColor = { 0, 255, 0 };
+				//hintObj.push_back(curPoint);
+				cv::circle(type, curPoint, circleSize, { GraphCutSegmentation::OBJECT }, -1);
+				cv::circle(hint_img, curPoint, circleSize, { 0, 255, 0 }, -1);
 				break;
 			}
 
-			cv::circle(hint_img, curPoint, int(std::min(hint_img.cols, hint_img.rows) * SIZE_RATIO), seedColor, -1);
+			
 
 		}
 
@@ -116,6 +113,7 @@ void mouseHandler(int event, int x, int y, int flags, void *param) {
 void setHint(const std::string& fileName) {
 
 	original_img = cv::imread(SRC + fileName + ".jpg");
+	type = cv::Mat::zeros(original_img.size(), CV_8S);
 
 	if (original_img.empty()) {
 		std::cout << fileName << " Image reading error!\n";
@@ -142,6 +140,18 @@ void setHint(const std::string& fileName) {
 	cv::destroyAllWindows();
 	cv::imwrite(DST + fileName + "_hint.jpg", hint_img, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
 
+	for (int r = 0; r < type.rows; r++)
+		for (int c = 0; c < type.cols; c++) {
+			switch (type.at<char>(r, c)) {
+			case GraphCutSegmentation::BACKGROUND:
+				hintBkg.push_back({ c, r });
+				break;
+			case GraphCutSegmentation::OBJECT:
+				hintObj.push_back({ c, r });
+				break;
+			}
+		}
+
 	std::ofstream hintFile(SRC + fileName + ".hint");
 	hintFile << hintBkg.size() << std::endl;
 	for (auto &p : hintBkg)
@@ -155,14 +165,20 @@ void setHint(const std::string& fileName) {
 
 void getObj(const std::string& fileName) {
 
+	// Read input image
 	original_img = cv::imread(SRC + fileName + ".jpg");
 	if (original_img.empty()) {
 		std::cout << fileName << " Hint file missing error!\n";
 		return;
 	}
+	
+	ofs << fileName << ',';
 
+	// Read hints
 	type = cv::Mat::zeros(cv::Size(original_img.cols, original_img.rows), CV_8S);
-	std::vector<cv::Point> objPts, bkgPts;
+	hintObj.clear();
+	hintBkg.clear();
+
 	GraphCutSegmentation gc;
 	LazySnapping ls;
 
@@ -174,7 +190,7 @@ void getObj(const std::string& fileName) {
 		int x, y;
 		hintFile >> x >> y;
 		type.at<char>(y, x) = GraphCutSegmentation::BACKGROUND;
-		bkgPts.push_back({ x, y });
+		hintBkg.push_back({ x, y });
 		ls.setUpdateB(true);
 	}
 	hintFile >> nSeed;
@@ -182,46 +198,48 @@ void getObj(const std::string& fileName) {
 		int x, y;
 		hintFile >> x >> y;
 		type.at<char>(y, x) = GraphCutSegmentation::OBJECT;
-		objPts.push_back({ x, y });
+		hintObj.push_back({ x, y });
 		ls.setUpdateF(true);
 	}
 
+	// Measure interactive graphcut
 	uint64_t start, end;
 
-	
 	cv::Mat outMask;
 
 	start = cv::getTickCount();
 	gc.segment(original_img, type, outMask);
 	end = cv::getTickCount();
 
-	std::cout << "Interactive GraphCut: " << double(end - start) / cv::getTickFrequency() << "; ";
+	ofs << double(end - start) / cv::getTickFrequency() << ',';
 
 	cv::Mat obj;
 	original_img.copyTo(obj, outMask);
-	cv::imshow("gcObj", obj);
+	//cv::imshow("gcObj", obj);
 	cv::imwrite(DST + fileName + "_graphcut_object.jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
 
-	
+	// Measure lazy snapping
 	ls.setSourceImage(original_img);
-	ls.setBackgroundPoints(bkgPts);
-	ls.setForegroundPoints(objPts);
+	ls.setBackgroundPoints(hintBkg);
+	ls.setForegroundPoints(hintObj);
 
 	start = cv::getTickCount();
 	ls.initMarkers();
 	ls.runMaxFlow();
 	end = cv::getTickCount();
 
-	std::cout << "Lazy Snapping: " << double(end - start) / cv::getTickFrequency() << std::endl;
+	ofs << double(end - start) / cv::getTickFrequency() << "\r\n";
 	obj = ls.getImageColor();
-	cv::imshow("lsObj", obj);
+	//cv::imshow("lsObj", obj);
 	cv::imwrite(DST + fileName + "_lazy_object.jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
 
-	cv::waitKey(0);
-	cv::destroyAllWindows();
+	//cv::waitKey(0);
+	//cv::destroyAllWindows();
 }
 
 void readInputFile(int mode, const std::string& inputFile) {
+
+	ofs << "Test,InteractiveGraphCut,LazySnapping\r\n";
 
 	params_init();
 	std::ifstream ifs(inputFile);

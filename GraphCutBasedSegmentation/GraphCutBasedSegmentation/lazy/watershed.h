@@ -91,7 +91,7 @@ void WatershedSegmentation(CImg<unsigned char> &img, CImg<signed int> *labels, b
   int next_label  = 0;
   const int ngray = 256;
 
-  CImgDisplay* disp_progress;
+  CImgDisplay* disp_progress = NULL;
 
   if (show)
     disp_progress = new CImgDisplay(*labels, "Progress",1);

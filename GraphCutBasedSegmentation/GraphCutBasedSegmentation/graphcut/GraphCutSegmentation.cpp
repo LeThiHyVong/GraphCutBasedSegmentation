@@ -141,8 +141,8 @@ float GraphCutSegmentation::B_pq(const cv::Point& pix1, const cv::Point& pix2)
 	float intensityDiff = cv::norm(center.row(cluster_idx.at<int>(convertPixelToNode(pix1), 0)),
 		center.row(cluster_idx.at<int>(convertPixelToNode(pix2), 0)),
 		distType);
-
-	return  w_exp * exp(- intensityDiff * intensityDiff / (2 * sigmaSqr)) /  cv::norm(pix2-pix1);
+	auto dist = pix2 - pix1;
+	return  exp(-intensityDiff * intensityDiff / (2 * sigmaSqr)) / cv::sqrt(dist.x * dist.x + dist.y * dist.y);
 
 }
 
@@ -176,13 +176,13 @@ void GraphCutSegmentation::calcK()
 
 float GraphCutSegmentation::Pr_bkg(const cv::Point& pix) {
 
-	return w_prob * -log(bkgRelativeHistogram[cluster_idx.at<int>(convertPixelToNode(pix), 0)]);
+	return -log(bkgRelativeHistogram[cluster_idx.at<int>(convertPixelToNode(pix), 0)]);
 
 }
 
 float GraphCutSegmentation::Pr_obj(const cv::Point& pix) {
 
-	return w_prob * -log(objRelativeHistogram[cluster_idx.at<int>(convertPixelToNode(pix), 0)]);
+	return -log(objRelativeHistogram[cluster_idx.at<int>(convertPixelToNode(pix), 0)]);
 }
 
 void GraphCutSegmentation::cutGraph(cv::Mat& outputMask) {
