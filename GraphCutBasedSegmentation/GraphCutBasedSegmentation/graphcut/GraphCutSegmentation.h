@@ -16,7 +16,7 @@ public:
 		OBJECT = 1
 	};
 
-	GraphCutSegmentation()=default;
+	GraphCutSegmentation();
 
 	~GraphCutSegmentation();
 
@@ -38,17 +38,18 @@ public:
 
 	void segment(const cv::Mat& img, const cv::Mat& seedMask, cv::Mat& outputMask);	
 
+	void updateSeeds(const std::vector<cv::Point>& newSeeds, PixelType pixType, cv::Mat& outputMask);
+
+	void createDefault();
+	void cleanGarbage();
+
 private:
 
 	const std::vector<cv::Point> neighbor8 {
-		{-1, -1},
-		{-1, 0},
-		{-1, 1},
-		{0, 1},
-		{1, 1},
-		{1, 0},
-		{1, -1},
-		{0, -1}
+		{-1, -1}, {-1,  0},
+		{-1,  1}, { 0,  1},
+		{ 1,  1}, { 1,  0},
+		{ 1, -1}, { 0, -1}
 	};
 
 	std::unique_ptr<GraphType> g;
@@ -57,15 +58,18 @@ private:
 
 	float K;
 
-	int    nCluster = 10;
-	int    dim = 3;
-	float  sigmaSqr = 40000.0f;
-	float  lambda = .5f;
+	int    nCluster;
+	int    dim;
+	float  sigmaSqr;
+	float  lambda;
+	bool runFirstTime;
 
 	cv::Mat   cluster_idx, center;
-	cv::NormTypes distType = cv::NORM_L2;
+	cv::NormTypes distType = cv::NORM_L1;
 	std::vector<float> bkgRelativeHistogram;
 	std::vector<float> objRelativeHistogram;
+
+	void initParam();
 
 	float calcTWeight(const cv::Point& pix, int pixType, bool toSource = true);
 
@@ -133,7 +137,29 @@ inline void GraphCutSegmentation::setDistanceType(cv::NormTypes normType)
 	distType = normType;
 }
 
+inline void GraphCutSegmentation::initParam() {
+	setNCluster(10);
+	setNDimension(3);
+	setDiscontinuityThreshold(40000.0f);
+	setRegionBoundaryRelation(1.f);
+	runFirstTime = true;
+}
 
+inline void GraphCutSegmentation::createDefault() {
+	initParam();
+}
+
+inline void GraphCutSegmentation::cleanGarbage() {
+	auto tmpPtr = g.release();
+	if (tmpPtr != NULL) {
+		tmpPtr->reset();
+		delete tmpPtr;
+	}
+		
+	//changedNode->Reset();
+	//delete changedNode;
+	//changedNode = NULL;	
+}
 
 
 #endif /* FUSION_FRAMEWORK_H_ */

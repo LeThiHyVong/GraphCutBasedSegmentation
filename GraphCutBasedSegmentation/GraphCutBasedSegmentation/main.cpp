@@ -18,6 +18,9 @@
 
 std::ofstream ofs("result\\time.csv");
 
+GraphCutSegmentation gc;
+LazySnapping ls;
+
 cv::Mat original_img, type, hint_img;
 std::vector<std::string> inputList;
 std::vector<cv::Point> hintObj, hintBkg;
@@ -179,9 +182,6 @@ void getObj(const std::string& fileName) {
 	hintObj.clear();
 	hintBkg.clear();
 
-	GraphCutSegmentation gc;
-	LazySnapping ls;
-
 	std::cout << "starting to segment image" << fileName << std::endl;
 	std::ifstream hintFile(SRC + fileName + ".hint");
 	int nSeed;
@@ -206,11 +206,11 @@ void getObj(const std::string& fileName) {
 	uint64_t start, end;
 
 	cv::Mat outMask;
-
+	gc.createDefault();
 	start = cv::getTickCount();
 	gc.segment(original_img, type, outMask);
 	end = cv::getTickCount();
-
+	gc.cleanGarbage();
 	ofs << double(end - start) / cv::getTickFrequency() << ',';
 
 	cv::Mat obj;

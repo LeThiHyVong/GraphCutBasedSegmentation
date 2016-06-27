@@ -5,7 +5,7 @@
 #include <cstring>
 #include <fstream>
 
-void GraphCutSegmentation::initComponent(const cv::Mat& origImg, const cv::Mat& seedMask) {	
+void GraphCutSegmentation::initComponent(const cv::Mat& origImg, const cv::Mat& seedMask) {
 
 	cv::Mat data_points;
 	origImg.convertTo(data_points, CV_32FC3);
@@ -62,13 +62,13 @@ void GraphCutSegmentation::initComponent(const cv::Mat& origImg, const cv::Mat& 
 		objRelativeHistogram[i] = 1.0f * obj_hist[i] / obj_hist[nCluster];
 
 	}
-	
+
 }
 
 void GraphCutSegmentation::buildGraph(const cv::Mat& seedMask) {
 
 	g->add_node(imgWidth * imgHeight);
-	
+
 	cv::Rect imgRect(cv::Point(), cv::Size(imgWidth, imgHeight));
 
 	for (int i = 0; i < imgHeight; i++) {
@@ -188,9 +188,9 @@ float GraphCutSegmentation::Pr_obj(const cv::Point& pix) {
 void GraphCutSegmentation::cutGraph(cv::Mat& outputMask) {
 
 	outputMask.create(cv::Size(imgWidth, imgHeight), CV_8U);
-
-	float flow = g->maxflow();
-	//printf("		Flow = %f\n", flow);
+	float flow = 0.0;
+	flow = g->maxflow(!runFirstTime, NULL);
+	runFirstTime = false;
 
 	int node = 0;
 
@@ -210,44 +210,39 @@ void GraphCutSegmentation::cutGraph(cv::Mat& outputMask) {
 		}
 	}
 
-	// cv::imshow("Mask", outputMask);
-	//printf("		bkg=%d obj=%d total=%d\n", numBkg, numObj, numBkg + numObj);
-
 }
 
 void GraphCutSegmentation::segment(const cv::Mat& img, const cv::Mat& seedMask, cv::Mat& outputMask) {
 
-	g = std::unique_ptr<GraphType>(new GraphType(getNumNodes(img), getNumEdges(img)));
+	g.reset(new GraphType(getNumNodes(img), getNumEdges(img)));
 	imgWidth = img.cols;
 	imgHeight = img.rows;
-	//uint64_t start;
 
-	//printf("	setting up ..\n");
-
-	//start = cv::getTickCount();
 	initComponent(img, seedMask);
-	//printf("	%.2lf sec\n", double(cv::getTickCount() - start) / cv::getTickFrequency());
 
-	//printf("	************************************************************\n\n");
-
-	//printf("	building graph...\n");
-
-	//start = cv::getTickCount();
 	buildGraph(seedMask);
-	//printf("	%.2lf sec\n", double(cv::getTickCount() - start) / cv::getTickFrequency());
 
-	//printf("	************************************************************\n\n");
-
-	//printf("	segmenting image...\n");
-
-	//start = cv::getTickCount();
 	cutGraph(outputMask);
-	//printf("	%.2lf sec\n", double(cv::getTickCount() - start) / cv::getTickFrequency());
 
 }
 
+void GraphCutSegmentation::updateSeeds(const std::vector<cv::Point>& newSeeds, PixelType pixType, cv::Mat& outputMask) {
+	for (const auto& p : newSeeds) {
+		g->mark_node(convertPixelToNode(p));
+		g->add_tweights(
+			convertPixelToNode(p),
+			calcTWeight(p, pixType),
+			calcTWeight(p, pixType, false)
+		);
+	}
+	cutGraph(outputMask);
+}
+
+GraphCutSegmentation::GraphCutSegmentation() {
+	initParam();
+}
+
 GraphCutSegmentation::~GraphCutSegmentation() {
-	g->reset();
-	g.reset();	
+	cleanGarbage();
 }
 
