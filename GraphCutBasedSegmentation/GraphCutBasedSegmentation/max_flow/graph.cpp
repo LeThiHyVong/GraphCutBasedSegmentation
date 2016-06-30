@@ -6,14 +6,9 @@
 #include <string.h>
 #include "graph.h"
 
-/*
-	special constants for node->parent. Duplicated in maxflow.cpp, both should match!
-*/
-#define TERMINAL ( (arc *) 1 )		/* to terminal */
-#define ORPHAN   ( (arc *) 2 )		/* orphan */
 
 template <typename captype, typename tcaptype, typename flowtype> 
-	Graph<captype, tcaptype, flowtype>::Graph(int node_num_max, int edge_num_max, void (*err_function)(const char *))
+	Graph<captype, tcaptype, flowtype>::Graph(int node_num_max, int edge_num_max, void (*err_function)(char *))
 	: node_num(0),
 	  nodeptr_block(NULL),
 	  error_function(err_function)
@@ -79,12 +74,7 @@ template <typename captype, typename tcaptype, typename flowtype>
 
 	if (nodes != nodes_old)
 	{
-		node* i;
 		arc* a;
-		for (i=nodes; i<node_last; i++)
-		{
-			if (i->next) i->next = (node*) ((char*)i->next + (((char*) nodes) - ((char*) nodes_old)));
-		}
 		for (a=arcs; a<arc_last; a++)
 		{
 			a->head = (node*) ((char*)a->head + (((char*) nodes) - ((char*) nodes_old)));
@@ -113,7 +103,6 @@ template <typename captype, typename tcaptype, typename flowtype>
 		for (i=nodes; i<node_last; i++)
 		{
 			if (i->first) i->first = (arc*) ((char*)i->first + (((char*) arcs) - ((char*) arcs_old)));
-			if (i->parent && i->parent != ORPHAN && i->parent != TERMINAL) i->parent = (arc*) ((char*)i->parent + (((char*) arcs) - ((char*) arcs_old)));
 		}
 		for (a=arcs; a<arc_last; a++)
 		{
@@ -123,4 +112,7 @@ template <typename captype, typename tcaptype, typename flowtype>
 	}
 }
 
-#include "instances.inc"
+template class Graph<int, int, int>;
+template class Graph<short, int, int>;
+template class Graph<float, float, float>;
+template class Graph<double, double, double>;

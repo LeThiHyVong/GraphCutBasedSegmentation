@@ -16,8 +16,11 @@ LazySnapping::LazySnapping() : graph(NULL)
 
 LazySnapping::~LazySnapping()
 {
-	graph->reset();
-	delete graph;
+	if (graph)
+	{
+		graph->reset();
+		delete graph;
+	}
 }
 
 void LazySnapping::setSourceImage(Mat image)
@@ -29,12 +32,12 @@ inline void LazySnapping::setUpdateF(bool value) { isUpdateF = value; }
 
 inline void LazySnapping::setUpdateB(bool value) { isUpdateB = value; }
 
-void LazySnapping::setForegroundPoints(const vector<cv::Point>& points)
+void LazySnapping::setForegroundPoints(vector<cv::Point> points)
 {
 	forePts = points;
 }
 
-void LazySnapping::setBackgroundPoints(const vector<cv::Point>& points)
+void LazySnapping::setBackgroundPoints(vector<cv::Point> points)
 {
 	backPts = points;
 }
@@ -174,7 +177,7 @@ void LazySnapping::initSuperPixel()
 {
 	Mat visited = Mat::zeros(markers.rows, markers.cols, CV_32S);
 
-	centers.resize(n * 2);
+	centers.resize(n * 10000);
 
 	int reLabel = 0;
 	for (int i = 0; i < markers.rows; i++)
@@ -260,8 +263,8 @@ void LazySnapping::initMarkers()
 void LazySnapping::getE1(int currentLabel, double * energy)
 {
 	// average distance
-	double df = INT_MAX + 0.0;
-	double db = INT_MAX + 0.0;
+	double df = INFINNITE_MAX;
+	double db = INFINNITE_MAX;
 	for (int i = 0; i < KF; i++)
 	{
 		double mindf = norm(centers[currentLabel], foreground_centers.at<Vec3f>(i, 0), NORM_L2);
@@ -288,7 +291,7 @@ float LazySnapping::colorDistance(Vec3f color1, Vec3f color2)
 float LazySnapping::getE2(int xlabel, int ylabel)
 {
 	const float EPSILON = 1;
-	float lambda = 100;
+	float lambda = 10;
 
 	float distance = colorDistance(centers[xlabel], centers[ylabel]);
 	return (float)lambda / (EPSILON + distance);
@@ -310,11 +313,11 @@ void LazySnapping::initGraph()
 		if (connectToSource[i])
 		{
 			e1[0] = 0;
-			e1[1] = INT_MAX;
+			e1[1] = INFINNITE_MAX;
 		}
 		else if (connectToSink[i])
 		{
-			e1[0] = INT_MAX;
+			e1[0] = INFINNITE_MAX;
 			e1[1] = 0;
 		}
 		else
@@ -359,14 +362,24 @@ void LazySnapping::getLabellingValue()
 		}
 }
 
-cv::Mat LazySnapping::getImageMask()
+IplImage * LazySnapping::getImageMask()
 {
-	cv::Mat gray(src.size(), CV_8U);
+	IplImage* gray = cvCreateImage(src.size(), 8, 1);
 	for (int h = 0; h < markers.rows; h++)
 	{
+		unsigned char* p = (unsigned char*)gray->imageData + h*gray->widthStep;
 		for (int w = 0; w < markers.cols; w++)
 		{
-			gray.at<uchar>(h, w) = FLabel[markers.at<int>(h, w)] * 255;
+			int currentLabel = markers.at<int>(h, w);
+			if (FLabel[currentLabel] == 1)
+			{
+				*p = 0;
+			}
+			else if (FLabel[currentLabel] == 0)
+			{
+				*p = 255;
+			}
+			p++;
 		}
 	}
 

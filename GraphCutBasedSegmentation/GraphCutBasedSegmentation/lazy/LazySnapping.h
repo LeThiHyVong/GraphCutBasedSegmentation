@@ -11,6 +11,8 @@
 
 #define K 64
 
+const double INFINNITE_MAX = 1e10;
+
 class LazySnapping
 {
 private:
@@ -99,15 +101,15 @@ public:
 	void setUpdateF(bool value);
 	void setUpdateB(bool value);
 
-	void setForegroundPoints(const std::vector<cv::Point>& points);
+	void setForegroundPoints(std::vector<cv::Point> points);
 
-	void setBackgroundPoints(const std::vector<cv::Point>& points);
+	void setBackgroundPoints(std::vector<cv::Point> points);
 
 	void initMarkers();
 
 	void runMaxFlow();
 
-	cv::Mat getImageMask();
+	IplImage* getImageMask();
 
 	cv::Mat getImageColor();
 

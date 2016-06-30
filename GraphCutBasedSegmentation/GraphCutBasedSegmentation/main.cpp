@@ -228,7 +228,7 @@ void getObj(const std::string& fileName) {
 	ls.runMaxFlow();
 	end = cv::getTickCount();
 
-	ofs << double(end - start) / cv::getTickFrequency() << "\r\n";
+	ofs << double(end - start) / cv::getTickFrequency() << "\n";
 	obj = ls.getImageColor();
 	//cv::imshow("lsObj", obj);
 	cv::imwrite(DST + fileName + "_lazy_object.jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
@@ -237,11 +237,54 @@ void getObj(const std::string& fileName) {
 	//cv::destroyAllWindows();
 }
 
-void readInputFile(int mode, const std::string& inputFile) {
+void testLambda(const std::string& inputFile) {
+	std::string tmpFile = inputFile.substr(0, inputFile.find_last_of('.'));
+	original_img = cv::imread(inputFile);
+	setHint(tmpFile);
+	const std::vector<float> lambda{ 0.0, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64 };
+	for (auto lambdaVal : lambda) {
+		
+		type = cv::Mat::zeros(cv::Size(original_img.cols, original_img.rows), CV_8S);
+
+		std::cout << "starting to segment image" << tmpFile << " " << lambdaVal <<  std::endl;
+		std::ifstream hintFile(SRC + tmpFile + ".hint");
+		int nSeed;
+		hintFile >> nSeed;
+		for (int i = 0; i < nSeed; i++) {
+			int x, y;
+			hintFile >> x >> y;
+			type.at<char>(y, x) = GraphCutSegmentation::BACKGROUND;
+		}
+		hintFile >> nSeed;
+		for (int i = 0; i < nSeed; i++) {
+			int x, y;
+			hintFile >> x >> y;
+			type.at<char>(y, x) = GraphCutSegmentation::OBJECT;
+		}
+
+		// Measure interactive graphcut
+		uint64_t start, end;
+
+		cv::Mat outMask;
+		gc.createDefault();
+		gc.setRegionBoundaryRelation(lambdaVal);
+		start = cv::getTickCount();
+		gc.segment(original_img, type, outMask);
+		end = cv::getTickCount();
+		gc.cleanGarbage();
+		ofs << double(end - start) / cv::getTickFrequency() << ',';
+
+		cv::Mat obj;
+		original_img.copyTo(obj, outMask);
+		//cv::imshow("gcObj", obj);
+		cv::imwrite(DST + tmpFile + "_graphcut_object" + std::to_string(lambdaVal) + ".jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
+	}
+}
+
+void readInputFile(const std::string& inputFile) {
 
 	ofs << "Test,InteractiveGraphCut,LazySnapping\r\n";
 
-	params_init();
 	std::ifstream ifs(inputFile);
 	if (!ifs.good()) {
 		argument_disp();
@@ -258,18 +301,32 @@ void readInputFile(int mode, const std::string& inputFile) {
 		
 	for (auto &file : inputList)
 		setHint(file);
-	if (mode < 1)
-		return;
+
 	for (auto &file : inputList)
 		getObj(file);
 
+}
+
+void switchMode(int mode, const std::string& inputFile) {
+	params_init();
+	switch (mode) {
+	case 0:
+		testLambda(inputFile);
+		break;
+	case 1:
+		readInputFile(inputFile);
+		break;
+
+	default:
+		argument_disp();
+	}
 }
 
 int main(int argc, char** argv) {
 
 	switch (argc) {
 	case 3:
-		readInputFile(std::stoi(argv[1]), argv[2]);
+		switchMode(std::stoi(argv[1]), argv[2]);
 		break;
 	default:
 		argument_disp();

@@ -49,7 +49,7 @@ private:
 		{-1, -1}, {-1,  0},
 		{-1,  1}, { 0,  1},
 		{ 1,  1}, { 1,  0},
-		{ 1, -1}, { 0, -1}
+		{1,  -1},  { 0, -1}
 	};
 
 	std::unique_ptr<GraphType> g;
@@ -63,9 +63,10 @@ private:
 	float  sigmaSqr;
 	float  lambda;
 	bool runFirstTime;
+	cv::NormTypes distType;
 
 	cv::Mat   cluster_idx, center;
-	cv::NormTypes distType = cv::NORM_L1;
+	
 	std::vector<float> bkgRelativeHistogram;
 	std::vector<float> objRelativeHistogram;
 
@@ -138,10 +139,11 @@ inline void GraphCutSegmentation::setDistanceType(cv::NormTypes normType)
 }
 
 inline void GraphCutSegmentation::initParam() {
-	setNCluster(10);
+	setNCluster(20);
 	setNDimension(3);
-	setDiscontinuityThreshold(40000.0f);
+	setDiscontinuityThreshold(200.f);
 	setRegionBoundaryRelation(1.f);
+	setDistanceType(cv::NORM_L1);
 	runFirstTime = true;
 }
 

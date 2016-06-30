@@ -1,26 +1,5 @@
 /* graph.h */
 /*
-    Copyright Vladimir Kolmogorov (vnk@ist.ac.at), Yuri Boykov (yuri@csd.uwo.ca) 
-
-    This file is part of MAXFLOW.
-
-    MAXFLOW is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    MAXFLOW is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with MAXFLOW.  If not, see <http://www.gnu.org/licenses/>.
-
-========================
-
-	version 3.04
-
 	This software library implements the maxflow algorithm
 	described in
 
@@ -85,7 +64,7 @@ public:
 
 	/////////////////////////////////////////////////////////////////////////
 	//                     BASIC INTERFACE FUNCTIONS                       //
-	//              (should be enough for most applications)               //
+    //              (should be enough for most applications)               //
 	/////////////////////////////////////////////////////////////////////////
 
 	// Constructor. 
@@ -101,7 +80,7 @@ public:
 	// Also, temporarily the amount of allocated memory would be more than twice than needed.
 	// Similarly for edges.
 	// If you wish to avoid this overhead, you can download version 2.2, where nodes and edges are stored in blocks.
-	Graph(int node_num_max, int edge_num_max, void (*err_function)(const char *) = NULL);
+	Graph(int node_num_max, int edge_num_max, void (*err_function)(char *) = NULL);
 
 	// Destructor
 	~Graph();
@@ -287,7 +266,7 @@ private:
 		arc			*parent;	// node's parent
 		node		*next;		// pointer to the next active node
 								//   (or to itself if it is the last node in the list)
-		long			TS;			// timestamp showing when DIST was computed
+		int			TS;			// timestamp showing when DIST was computed
 		int			DIST;		// distance to the terminal
 		int			is_sink : 1;	// flag showing whether the node is in the source or in the sink tree (if parent!=NULL)
 		int			is_marked : 1;	// set by mark_node()
@@ -321,7 +300,7 @@ private:
 
 	DBlock<nodeptr>		*nodeptr_block;
 
-	void	(*error_function)(const char *);	// this function is called if a error occurs,
+	void	(*error_function)(char *);	// this function is called if a error occurs,
 										// with a corresponding error message
 										// (or exit(1) is called if it's NULL)
 
@@ -335,7 +314,7 @@ private:
 
 	node				*queue_first[2], *queue_last[2];	// list of active nodes
 	nodeptr				*orphan_first, *orphan_last;		// list of pointers to orphans
-	long					TIME;								// monotonically increasing global counter
+	int					TIME;								// monotonically increasing global counter
 
 	/////////////////////////////////////////////////////////////////////////
 
@@ -384,12 +363,25 @@ template <typename captype, typename tcaptype, typename flowtype>
 
 	if (node_last + num > node_max) reallocate_nodes(num);
 
-	memset(node_last, 0, num*sizeof(node));
+	if (num == 1)
+	{
+		node_last -> first = NULL;
+		node_last -> tr_cap = 0;
+		node_last -> is_marked = 0;
+		node_last -> is_in_changed_list = 0;
 
-	node_id i = node_num;
-	node_num += num;
-	node_last += num;
-	return i;
+		node_last ++;
+		return node_num ++;
+	}
+	else
+	{
+		memset(node_last, 0, num*sizeof(node));
+
+		node_id i = node_num;
+		node_num += num;
+		node_last += num;
+		return i;
+	}
 }
 
 template <typename captype, typename tcaptype, typename flowtype> 

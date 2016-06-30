@@ -33,6 +33,12 @@
     <ClCompile Include="lazy\watershedLabel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="lazy\SeedsRevised.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lazy\Tools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="graphcut\GraphCutSegmentation.h">
@@ -63,6 +69,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="lazy\watershedLabel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lazy\SeedsRevised.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lazy\Tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

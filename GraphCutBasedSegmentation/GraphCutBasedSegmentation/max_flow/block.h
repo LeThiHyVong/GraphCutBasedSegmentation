@@ -1,6 +1,4 @@
 /* block.h */
-/* Vladimir Kolmogorov vnk@ist.ac.at */
-/* Last modified 08/05/2012 */
 /*
 	Template classes Block and DBlock
 	Implement adding and deleting items of the same type in blocks.
@@ -105,7 +103,7 @@ public:
 	   (optionally) the pointer to the function which
 	   will be called if allocation failed; the message
 	   passed to this function is "Not enough memory!" */
-	Block(int size, void (*err_function)(const char *) = NULL) { first = last = NULL; block_size = size; error_function = err_function; }
+	Block(int size, void (*err_function)(char *) = NULL) { first = last = NULL; block_size = size; error_function = err_function; }
 
 	/* Destructor. Deallocates all items added so far */
 	~Block() { while (first) { block *next = first -> next; delete[] ((char*)first); first = next; } }
@@ -163,27 +161,6 @@ public:
 		return scan_current_data ++;
 	}
 
-	struct iterator; // for overlapping scans
-	Type *ScanFirst(iterator& i)
-	{
-		for (i.scan_current_block=first; i.scan_current_block; i.scan_current_block = i.scan_current_block->next)
-		{
-			i.scan_current_data = & ( i.scan_current_block -> data[0] );
-			if (i.scan_current_data < i.scan_current_block -> current) return i.scan_current_data ++;
-		}
-		return NULL;
-	}
-	Type *ScanNext(iterator& i)
-	{
-		while (i.scan_current_data >= i.scan_current_block -> current)
-		{
-			i.scan_current_block = i.scan_current_block -> next;
-			if (!i.scan_current_block) return NULL;
-			i.scan_current_data = & ( i.scan_current_block -> data[0] );
-		}
-		return i.scan_current_data ++;
-	}
-
 	/* Marks all elements as empty */
 	void Reset()
 	{
@@ -211,17 +188,11 @@ private:
 	int		block_size;
 	block	*first;
 	block	*last;
-public:
-	struct iterator
-	{
-		block	*scan_current_block;
-		Type	*scan_current_data;
-	};
-private:
+
 	block	*scan_current_block;
 	Type	*scan_current_data;
 
-	void	(*error_function)(const char *);
+	void	(*error_function)(char *);
 };
 
 /***********************************************************************/
@@ -235,7 +206,7 @@ public:
 	   (optionally) the pointer to the function which
 	   will be called if allocation failed; the message
 	   passed to this function is "Not enough memory!" */
-	DBlock(int size, void (*err_function)(const char *) = NULL) { first = NULL; first_free = NULL; block_size = size; error_function = err_function; }
+	DBlock(int size, void (*err_function)(char *) = NULL) { first = NULL; first_free = NULL; block_size = size; error_function = err_function; }
 
 	/* Destructor. Deallocates all items added so far */
 	~DBlock() { while (first) { block *next = first -> next; delete[] ((char*)first); first = next; } }
@@ -289,7 +260,7 @@ private:
 	block		*first;
 	block_item	*first_free;
 
-	void	(*error_function)(const char *);
+	void	(*error_function)(char *);
 };
 
 

@@ -4,9 +4,8 @@
 #include <stdio.h>
 #include "graph.h"
 
-
 /*
-	special constants for node->parent. Duplicated in graph.cpp, both should match!
+	special constants for node->parent
 */
 #define TERMINAL ( (arc *) 1 )		/* to terminal */
 #define ORPHAN   ( (arc *) 2 )		/* orphan */
@@ -681,4 +680,7 @@ template <typename captype, typename tcaptype, typename flowtype>
 	}
 }
 
-#include "instances.inc"
+template class Graph<int, int, int>;
+template class Graph<short, int, int>;
+template class Graph<float, float, float>;
+template class Graph<double, double, double>;

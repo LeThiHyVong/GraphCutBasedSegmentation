@@ -142,7 +142,8 @@ float GraphCutSegmentation::B_pq(const cv::Point& pix1, const cv::Point& pix2)
 		center.row(cluster_idx.at<int>(convertPixelToNode(pix2), 0)),
 		distType);
 	auto dist = pix2 - pix1;
-	return  exp(-intensityDiff * intensityDiff / (2 * sigmaSqr)) / cv::sqrt(dist.x * dist.x + dist.y * dist.y);
+	return  exp(-intensityDiff * intensityDiff / (2 * sigmaSqr)) 
+		/ std::sqrt(dist.x * dist.x + dist.y * dist.y);
 
 }
 

@@ -80,7 +80,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>D:\tmp\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -96,6 +96,8 @@
   <ItemGroup>
     <ClCompile Include="graphcut\GraphCutSegmentation.cpp" />
     <ClCompile Include="lazy\LazySnapping.cpp" />
+    <ClCompile Include="lazy\SeedsRevised.cpp" />
+    <ClCompile Include="lazy\Tools.cpp" />
     <ClCompile Include="lazy\watershedLabel.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="max_flow\graph.cpp" />
@@ -107,6 +109,8 @@
     <ClInclude Include="lazy\cvMat.h" />
     <ClInclude Include="lazy\LazySnapping.h" />
     <ClInclude Include="lazy\objects.h" />
+    <ClInclude Include="lazy\SeedsRevised.h" />
+    <ClInclude Include="lazy\Tools.h" />
     <ClInclude Include="lazy\util.h" />
     <ClInclude Include="lazy\watershed.h" />
     <ClInclude Include="lazy\watershedLabel.h" />
