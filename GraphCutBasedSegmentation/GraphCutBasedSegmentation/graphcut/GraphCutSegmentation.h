@@ -24,19 +24,17 @@ public:
 
 	void setNDimension(int);
 
-	void setDiscontinuityThreshold(float);
+	void calcColorVariance(const cv::Mat& origImg);
 
 	void setRegionBoundaryRelation(float);
 
-	void setDistanceType(cv::NormTypes);
-
 	void initComponent(const cv::Mat& origImg, const cv::Mat& seedMask);
 
-	void buildGraph(const cv::Mat& seedMask);
+	void buildGraph(const cv::Mat& origImg, const cv::Mat& seedMask);
 
 	void cutGraph(cv::Mat& outMask);
 
-	void segment(const cv::Mat& img, const cv::Mat& seedMask, cv::Mat& outputMask);	
+	void segment(const cv::Mat& img, const cv::Mat& seedMask, cv::Mat& outputMask);
 
 	void updateSeeds(const std::vector<cv::Point>& newSeeds, PixelType pixType, cv::Mat& outputMask);
 
@@ -45,52 +43,49 @@ public:
 
 private:
 
-	const std::vector<cv::Point> neighbor8 {
+	const std::vector<cv::Point> neighbor8{
 		{-1, -1}, {-1,  0},
 		{-1,  1}, { 0,  1},
 		{ 1,  1}, { 1,  0},
 		{1,  -1},  { 0, -1}
 	};
 
-	std::unique_ptr<GraphType> g;
+	std::unique_ptr<GraphType>	g;
 
-	int imgWidth, imgHeight;
+	int							imgWidth, imgHeight;
 
-	float K;
+	float						K;
 
-	int    nCluster;
-	int    dim;
-	float  sigmaSqr;
-	float  lambda;
-	bool runFirstTime;
-	cv::NormTypes distType;
+	int							nCluster;
+	int							dim;
+	cv::Vec3f					sigmaSqr;
+	float						lambda;
+	bool						runFirstTime;
 
-	cv::Mat   cluster_idx, center;
-	
-	std::vector<float> bkgRelativeHistogram;
-	std::vector<float> objRelativeHistogram;
+	cv::Mat						cluster_idx;
 
-	void initParam();
+	std::vector<float>			bkgRelativeHistogram;
+	std::vector<float>			objRelativeHistogram;
 
-	float calcTWeight(const cv::Point& pix, int pixType, bool toSource = true);
+	void						initParam();
 
-	float calcNWeight(int node1, int node2);
+	float						calcTWeight(const cv::Point& pix, int pixType, bool toSource = true);
 
-	int convertPixelToNode(const cv::Point&);
+	float						calcNWeight(const cv::Point& pix1, const cv::Point& pix2, const cv::Mat& origImg); //B_pq
 
-	cv::Point convertNodeToPixel(int node);
+	int							convertPixelToNode(const cv::Point&);
 
-	float B_pq(const cv::Point&, const cv::Point&);
+	cv::Point					convertNodeToPixel(int node);
 
-	void calcK();
+	void						calcK(const cv::Mat& origImg);
 
-	float Pr_bkg(const cv::Point&);
+	float						Pr_bkg(const cv::Point&);
 
-	float Pr_obj(const cv::Point&);
+	float						Pr_obj(const cv::Point&);
 
-	int getNumNodes(const cv::Mat& img);
+	int							getNumNodes(const cv::Mat& img);
 
-	int getNumEdges(const cv::Mat& img);
+	int							getNumEdges(const cv::Mat& img);
 
 };
 
@@ -122,28 +117,15 @@ inline void GraphCutSegmentation::setNDimension(int _dim)
 	dim = _dim;
 }
 
-inline void GraphCutSegmentation::setDiscontinuityThreshold(float _sigma)
-{
-	sigmaSqr = _sigma * _sigma;
-}
-
 inline void GraphCutSegmentation::setRegionBoundaryRelation(float _lambda)
 {
 	lambda = _lambda;
 }
 
-
-inline void GraphCutSegmentation::setDistanceType(cv::NormTypes normType)
-{
-	distType = normType;
-}
-
 inline void GraphCutSegmentation::initParam() {
 	setNCluster(20);
 	setNDimension(3);
-	setDiscontinuityThreshold(200.f);
 	setRegionBoundaryRelation(1.f);
-	setDistanceType(cv::NORM_L1);
 	runFirstTime = true;
 }
 
@@ -157,7 +139,7 @@ inline void GraphCutSegmentation::cleanGarbage() {
 		tmpPtr->reset();
 		delete tmpPtr;
 	}
-		
+
 	//changedNode->Reset();
 	//delete changedNode;
 	//changedNode = NULL;	

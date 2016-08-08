@@ -219,19 +219,19 @@ void getObj(const std::string& fileName) {
 	cv::imwrite(DST + fileName + "_graphcut_object.jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
 
 	// Measure lazy snapping
-	ls.setSourceImage(original_img);
-	ls.setBackgroundPoints(hintBkg);
-	ls.setForegroundPoints(hintObj);
+	//ls.setSourceImage(original_img);
+	//ls.setBackgroundPoints(hintBkg);
+	//ls.setForegroundPoints(hintObj);
 
-	start = cv::getTickCount();
-	ls.initMarkers();
-	ls.runMaxFlow();
-	end = cv::getTickCount();
+	//start = cv::getTickCount();
+	//ls.initMarkers();
+	//ls.runMaxFlow();
+	//end = cv::getTickCount();
 
-	ofs << double(end - start) / cv::getTickFrequency() << "\n";
-	obj = ls.getImageColor();
+	//ofs << double(end - start) / cv::getTickFrequency() << "\n";
+	//obj = ls.getImageColor();
 	//cv::imshow("lsObj", obj);
-	cv::imwrite(DST + fileName + "_lazy_object.jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
+	//cv::imwrite(DST + fileName + "_lazy_object.jpg", obj, std::vector<int>{CV_IMWRITE_JPEG_QUALITY, 100});
 
 	//cv::waitKey(0);
 	//cv::destroyAllWindows();
