@@ -148,9 +148,9 @@ float GraphCutSegmentation::calcNWeight(const cv::Point& pix1, const cv::Point& 
 	auto r1 = origImg.at<cv::Vec3b>(pix1), \
 		r2 = origImg.at<cv::Vec3b>(pix2);
 	float intensityDiff = 0.0f;
-	for (int i = 0; i < r1.cols; i++) {
+	for (int i = 0; i < dim; i++) {
 		float tmpDiff = r1[i] * 1.0f - r2[i];
-		intensityDiff = std::max(intensityDiff, (tmpDiff * tmpDiff / (2 * sigmaSqr[i])));
+		intensityDiff += (tmpDiff * tmpDiff / (2 * sigmaSqr[i]));
 	}
 	auto dist = pix2 - pix1;
 	return  exp(-intensityDiff)
