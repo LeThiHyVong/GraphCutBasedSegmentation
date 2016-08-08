@@ -37,8 +37,6 @@ void GraphCutSegmentation::initComponent(const cv::Mat& origImg, const cv::Mat& 
 		cv::KMEANS_RANDOM_CENTERS
 	);
 
-	calcK(origImg);
-
 	std::vector<int> obj_hist(nCluster + 1), bkg_hist(nCluster + 1);
 	bkgRelativeHistogram.resize(nCluster);
 	objRelativeHistogram.resize(nCluster);
@@ -83,6 +81,44 @@ void GraphCutSegmentation::buildGraph(const cv::Mat& origImg, const cv::Mat& see
 	g->add_node(imgWidth * imgHeight);
 
 	cv::Rect imgRect(cv::Point(), cv::Size(imgWidth, imgHeight));
+	K = 0.0f;
+	std::vector<bool> isAdded(imgWidth * imgHeight, false);
+
+	for (int i = 0; i < imgHeight; i++) {
+
+		for (int j = 0; j < imgWidth; j++) {
+
+			int node = i * imgWidth + j;
+			cv::Point pix(j, i);
+
+			auto tmpSumNLink = 0.0f;
+
+			// Relation to neighbors
+			for (auto &k : neighbor8) {
+
+				cv::Point neighborPix = pix + k;
+
+				if (imgRect.contains(neighborPix)) {
+
+					int neighborNode = convertPixelToNode(neighborPix);
+					auto tmpNWeight = calcNWeight(pix, neighborPix, origImg);
+					tmpSumNLink += 2 * tmpNWeight;
+
+					if (!isAdded[neighborNode]) {
+						g->add_edge(node, neighborNode,
+							tmpNWeight,
+							tmpNWeight);
+					}
+
+
+				}
+			}
+			isAdded[node] = true;
+			K = std::max(tmpSumNLink, K);
+		}
+	}
+
+	K += 1.0f;
 
 	for (int i = 0; i < imgHeight; i++) {
 
@@ -97,22 +133,6 @@ void GraphCutSegmentation::buildGraph(const cv::Mat& origImg, const cv::Mat& see
 				calcTWeight(pix, seedMask.at<char>(pix)),
 				calcTWeight(pix, seedMask.at<char>(pix), false)
 			);
-
-			// Relation to neighbors
-			for (auto &k : neighbor8) {
-
-				cv::Point neighborPix = pix + k;
-
-				if (imgRect.contains(neighborPix)) {
-
-					int neighborNode = convertPixelToNode(neighborPix);
-
-					g->add_edge(node, neighborNode,
-						calcNWeight(pix, neighborPix, origImg),
-						calcNWeight(neighborPix, pix, origImg));
-
-				}
-			}
 
 		}
 	}
@@ -155,34 +175,6 @@ float GraphCutSegmentation::calcNWeight(const cv::Point& pix1, const cv::Point& 
 	auto dist = pix2 - pix1;
 	return  exp(-intensityDiff)
 		/ std::sqrt(dist.x * dist.x + dist.y * dist.y);
-}
-
-void GraphCutSegmentation::calcK(const cv::Mat& origImg)
-{
-	cv::Rect imgRect(cv::Point(), cv::Size(imgWidth, imgHeight));
-	for (int i = 0; i < imgHeight; i++) {
-
-		for (int j = 0; j < imgWidth; j++) {
-
-			float K_buf = 0;
-			cv::Point curPix(j, i);
-
-			for (auto &k : neighbor8) {
-
-				cv::Point neighborPix = curPix + k;
-
-				if (imgRect.contains(neighborPix)) {
-					K_buf += calcNWeight(curPix, neighborPix, origImg);
-				}
-
-			}
-
-			K = std::max(K, K_buf);
-
-		}
-	}
-
-	K = K + 1.0;
 }
 
 float GraphCutSegmentation::Pr_bkg(const cv::Point& pix) {

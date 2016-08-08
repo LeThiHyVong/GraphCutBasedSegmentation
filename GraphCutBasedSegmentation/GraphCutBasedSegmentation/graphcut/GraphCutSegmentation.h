@@ -77,8 +77,6 @@ private:
 
 	cv::Point					convertNodeToPixel(int node);
 
-	void						calcK(const cv::Mat& origImg);
-
 	float						Pr_bkg(const cv::Point&);
 
 	float						Pr_obj(const cv::Point&);
@@ -125,7 +123,7 @@ inline void GraphCutSegmentation::setRegionBoundaryRelation(float _lambda)
 inline void GraphCutSegmentation::initParam() {
 	setNCluster(20);
 	setNDimension(3);
-	setRegionBoundaryRelation(1.f);
+	setRegionBoundaryRelation(.5f);
 	runFirstTime = true;
 }
 
